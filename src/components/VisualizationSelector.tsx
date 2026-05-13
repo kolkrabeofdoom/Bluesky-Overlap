@@ -8,7 +8,8 @@ import {
   ListTree, 
   LayoutGrid, 
   Activity,
-  Layers
+  Layers,
+  Clock
 } from 'lucide-react';
 
 interface VisualizationSelectorProps {
@@ -58,6 +59,12 @@ const vizOptions: { type: VizType; label: string; description: string; icon: any
     label: 'Mosaic-Plot', 
     description: 'Proportionale Rechteck-Darstellung.',
     icon: LayoutGrid
+  },
+  {
+    type: 'temporal',
+    label: 'Zeitliche Analyse',
+    description: 'Forensische Analyse der Account-Erstellung.',
+    icon: Clock
   }
 ];
 
@@ -67,7 +74,7 @@ export default function VisualizationSelector({ activeType, onChange }: Visualiz
       <div className="bg-white px-6 md:px-10 py-4">
         <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Visualisierungsmodus wählen</h3>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-px">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-px">
         {vizOptions.map((opt) => {
           const Icon = opt.icon;
           const isActive = activeType === opt.type;
@@ -76,13 +83,13 @@ export default function VisualizationSelector({ activeType, onChange }: Visualiz
               key={opt.type}
               onClick={() => onChange(opt.type)}
               className={cn(
-                "group relative p-6 flex flex-col items-center gap-3 transition-all duration-300",
+                "group relative p-4 flex flex-col items-center gap-2 transition-all duration-300",
                 isActive 
                   ? "bg-blue-600 text-white" 
                   : "bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
-              <Icon size={24} className={cn("transition-transform group-hover:scale-110", isActive ? "text-white" : "text-blue-500")} />
+              <Icon size={20} className={cn("transition-transform group-hover:scale-110", isActive ? "text-white" : "text-blue-500")} />
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[10px] font-black uppercase tracking-tight text-center">{opt.label}</span>
                 {isActive && (

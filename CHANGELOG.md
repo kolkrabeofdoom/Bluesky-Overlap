@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-05-13
+
+### Added
+- **Native "Save As" Dialog**: CSV exports now trigger a native file picker dialog in supported browsers, allowing users to choose the destination folder and filename.
+
 ## [1.3.0] - 2026-05-13
 
 ### Added

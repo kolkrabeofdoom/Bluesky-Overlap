@@ -271,7 +271,7 @@ export default function App() {
     if (abortControllerRef.current) abortControllerRef.current.abort();
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (!result) return;
     const headers = ['Handle', 'Display Name', 'Description', 'Profile URL'];
     const rows = result.mutual.map(p => [
@@ -281,6 +281,29 @@ export default function App() {
       `https://bsky.app/profile/${p.handle}`
     ]);
     const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+
+    // Try using File System Access API for "Save As" dialog
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: 'overlap_mutual.csv',
+          types: [{
+            description: 'CSV File',
+            accept: { 'text/csv': ['.csv'] },
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(csvContent);
+        await writable.close();
+        return;
+      } catch (err: any) {
+        // User cancelled or error occurred - if cancelled, just stop
+        if (err.name === 'AbortError') return;
+        console.error('File Picker failed, falling back...', err);
+      }
+    }
+
+    // Fallback: Standard automatic download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

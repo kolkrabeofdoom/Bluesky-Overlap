@@ -5,7 +5,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import NetworkGraph, { NetworkNode, NetworkLink } from './components/NetworkGraph';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, AlertCircle, RefreshCw, StopCircle, Plus, X, Search, ExternalLink } from 'lucide-react';
+import { Users, AlertCircle, RefreshCw, StopCircle, Plus, X, Search, ExternalLink, ChevronDown } from 'lucide-react';
+import VisualizationSelector from './components/VisualizationSelector';
+import VennEulerDiagram from './components/visualizations/VennEulerDiagram';
+import UpSetPlot from './components/visualizations/UpSetPlot';
+import MosaicPlot from './components/visualizations/MosaicPlot';
+import SpecializedDiagrams from './components/visualizations/SpecializedDiagrams';
 
 const agent = new BskyAgent({ service: 'https://public.api.bsky.app' });
 
@@ -14,10 +19,13 @@ type FollowerData = {
   followers: ProfileView[];
 };
 
+export type VizType = 'venn' | 'euler' | 'edwards' | 'johnston' | 'upset' | 'kv' | 'mosaic';
+
 type ComparisonResult = {
   accounts: FollowerData[];
   mutual: ProfileView[];
-  intersections: { name: string; count: number }[];
+  intersections: { name: string; count: number; membership: number[] }[];
+  membershipCounts: Record<string, number>;
   networkLinks: NetworkLink[];
 };
 
@@ -27,6 +35,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ fetchCount: number; totalEstimated: number; handle: string }[]>([]);
   const [result, setResult] = useState<ComparisonResult | null>(null);
+  const [activeVizType, setActiveVizType] = useState<VizType>('venn');
   const [visibleLimit, setVisibleLimit] = useState(50);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -162,8 +171,9 @@ export default function App() {
       });
 
       const intersections = Object.entries(membershipCounts).map(([key, count]) => {
-          const names = key.split(',').map(idx => accountsData[parseInt(idx)].profile.handle.split('.')[0]);
-          return { name: names.join(' & '), count };
+          const membership = key.split(',').map(Number);
+          const names = membership.map(idx => accountsData[idx].profile.handle.split('.')[0]);
+          return { name: names.join(' & '), count, membership };
       }).sort((a, b) => b.count - a.count);
 
       // Interactions (Network Links)
@@ -183,6 +193,7 @@ export default function App() {
         accounts: accountsData,
         mutual: mutualList,
         intersections,
+        membershipCounts,
         networkLinks
       });
       
@@ -347,7 +358,46 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Data Visualization Grid */}
+              {/* Visualization Section */}
+              <div className="flex flex-col bg-slate-50 border-b border-slate-200">
+                <VisualizationSelector 
+                  activeType={activeVizType} 
+                  onChange={setActiveVizType} 
+                />
+                
+                <div className="p-6 md:p-10 lg:p-16 flex flex-col items-center">
+                  <div className="w-full max-w-6xl aspect-video md:aspect-[21/9] lg:aspect-[2/1]">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeVizType}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="w-full h-full"
+                      >
+                        {activeVizType === 'venn' && (
+                          <VennEulerDiagram accounts={result.accounts} membershipCounts={result.membershipCounts} type="venn" />
+                        )}
+                        {activeVizType === 'euler' && (
+                          <VennEulerDiagram accounts={result.accounts} membershipCounts={result.membershipCounts} type="euler" />
+                        )}
+                        {activeVizType === 'upset' && (
+                          <UpSetPlot accounts={result.accounts} intersections={result.intersections} />
+                        )}
+                        {activeVizType === 'mosaic' && (
+                          <MosaicPlot intersections={result.intersections} />
+                        )}
+                        {(activeVizType === 'edwards' || activeVizType === 'johnston' || activeVizType === 'kv') && (
+                          <SpecializedDiagrams accounts={result.accounts} membershipCounts={result.membershipCounts} type={activeVizType} />
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Visualization Grid (Secondary/Stats) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-slate-200 border-b border-slate-200">
                  
                  {/* Bar Chart representing Schnittmengen (Intersections) */}

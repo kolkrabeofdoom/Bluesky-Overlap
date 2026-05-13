@@ -1,0 +1,6 @@
+{
+  "name": "Bluesky Follower Overlap",
+  "description": "Vergleicht die Follower von zwei Bluesky Accounts und zeigt die gemeinsamen Kontakte an.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

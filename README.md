@@ -28,7 +28,8 @@ Switch between 7 different diagram types to gain unique insights into your data:
 - **Mosaic Plot**: Area-proportional rectangles showing the relative size of follower segments.
 - **Johnston Diagram**: Logical visualization focused on set-theoretic properties.
 - **Karnaugh-Veitch (KV) Diagram**: Tabular matrix representing every logical combination of followers.
-- **Temporal Analysis**: Visualize account creation trends to identify coordinated bot waves or growth spikes.
+- **Temporal Analysis (Bot-Wave)**: Visualize account creation trends with integrated bot-wave detection (stacked bars showing suspicious vs. normal accounts).
+- **Power-Follower Tracking**: Instantly identify the top influencers within the overlap, sorted by their follower reach.
 - **Bio-Mining (Word Cloud)**: Integrated keyword analysis of follower biographies to identify community clusters.
 
 ### 🔍 Forensic Capabilities
@@ -38,7 +39,10 @@ Switch between 7 different diagram types to gain unique insights into your data:
 - **Network Interactions**: Visualize if target accounts follow each other through an interactive graph.
 - **Full Profile Insights**: View avatars, display names, and descriptions of overlapping followers.
 - **CSV Export**: Export your findings for further analysis in external tools.
+- **Integrated Help System**: Detailed documentation for all diagrams and forensic features directly within the app.
 - **Account Creation Tracking**: Forensic detection of account creation dates to spot non-organic patterns.
+- **Influencer Identification**: Real-time ranking of the most followed accounts within the intersection set.
+- **Bot-Wave Heatmapping**: Visual indicators for suspicious account registration spikes.
 
 ## 🛠️ Installation & Setup
 

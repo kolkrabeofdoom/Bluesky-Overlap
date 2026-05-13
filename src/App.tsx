@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import NetworkGraph, { NetworkNode, NetworkLink } from './components/NetworkGraph';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Users, AlertCircle, RefreshCw, StopCircle, Plus, X, Search, ExternalLink, ChevronDown } from 'lucide-react';
+import { Users, AlertCircle, RefreshCw, StopCircle, Plus, X, Search, ExternalLink, ChevronDown, Info } from 'lucide-react';
 import VisualizationSelector from './components/VisualizationSelector';
 import VennEulerDiagram from './components/visualizations/VennEulerDiagram';
 import UpSetPlot from './components/visualizations/UpSetPlot';
@@ -13,6 +13,8 @@ import MosaicPlot from './components/visualizations/MosaicPlot';
 import SpecializedDiagrams from './components/visualizations/SpecializedDiagrams';
 import TemporalAnalysis from './components/visualizations/TemporalAnalysis';
 import BioWordCloud from './components/visualizations/BioWordCloud';
+import PowerFollowers from './components/visualizations/PowerFollowers';
+import HelpOverlay from './components/HelpOverlay';
 
 const agent = new BskyAgent({ service: 'https://public.api.bsky.app' });
 
@@ -48,6 +50,7 @@ export default function App() {
     const saved = localStorage.getItem('comparison_history');
     return saved ? JSON.parse(saved) : [];
   });
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const isSuspicious = (profile: any) => {
     if (!profile.createdAt) return false;
@@ -186,7 +189,16 @@ export default function App() {
             profilesRes.data.profiles.forEach(fullProfile => {
               const idx = enrichedMutuals.findIndex(f => f.did === fullProfile.did);
               if (idx !== -1) {
-                enrichedMutuals[idx] = { ...enrichedMutuals[idx], createdAt: (fullProfile as any).createdAt };
+                const profile = { 
+                  ...enrichedMutuals[idx], 
+                  createdAt: (fullProfile as any).createdAt,
+                  followersCount: fullProfile.followersCount,
+                  description: fullProfile.description,
+                  avatar: fullProfile.avatar
+                };
+                // Pre-calculate suspicious flag
+                (profile as any).isSuspicious = isSuspicious(profile);
+                enrichedMutuals[idx] = profile;
               }
             });
           } catch (e) {
@@ -286,10 +298,19 @@ export default function App() {
           <div className="w-8 h-8 bg-blue-500"></div>
           <span className="font-black text-xl md:text-2xl tracking-tighter uppercase whitespace-nowrap">Bluesky Overlap</span>
         </div>
-        <div className="flex gap-8 font-bold text-sm uppercase tracking-widest">
-          <span className="text-blue-600 border-b-2 border-blue-600 pb-1">Vergleich</span>
+        <div className="flex gap-8 font-bold text-sm uppercase tracking-widest items-center">
+          <span className="text-blue-600 border-b-2 border-blue-600 pb-1 cursor-default">Vergleich</span>
+          <button 
+            onClick={() => setIsHelpOpen(true)}
+            className="text-slate-400 hover:text-slate-900 transition-colors flex items-center gap-1.5"
+          >
+            <Info size={16} />
+            Hilfe
+          </button>
         </div>
       </nav>
+
+      <HelpOverlay isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       <main className="flex-1 flex flex-col bg-slate-50">
         <div className="p-4 md:p-6 border-b border-slate-200 bg-white">
@@ -533,6 +554,10 @@ export default function App() {
                 </div>
 
                 {result.mutual.length > 0 && (
+                  <PowerFollowers followers={result.mutual} />
+                )}
+
+                {result.mutual.length > 0 && (
                   <BioWordCloud mutualFollowers={result.mutual} />
                 )}
                 
@@ -543,7 +568,7 @@ export default function App() {
                 ) : (
                   <div className="flex text-slate-900 flex-col">
                     {result.mutual.slice(0, visibleLimit).map((profile) => {
-                      const suspicious = isSuspicious(profile);
+                      const suspicious = profile.isSuspicious || isSuspicious(profile);
                       return (
                       <div key={profile.did} className={cn("p-4 md:p-6 border-b border-slate-200 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start gap-4", suspicious && "bg-red-50/30")}>
                         <div className="relative">

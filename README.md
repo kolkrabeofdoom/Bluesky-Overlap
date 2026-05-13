@@ -29,8 +29,11 @@ Switch between 7 different diagram types to gain unique insights into your data:
 - **Johnston Diagram**: Logical visualization focused on set-theoretic properties.
 - **Karnaugh-Veitch (KV) Diagram**: Tabular matrix representing every logical combination of followers.
 - **Temporal Analysis**: Visualize account creation trends to identify coordinated bot waves or growth spikes.
+- **Bio-Mining (Word Cloud)**: Integrated keyword analysis of follower biographies to identify community clusters.
 
 ### 🔍 Forensic Capabilities
+- **Heuristic Bot-Risk Detection**: Automatic marking of suspicious accounts (newly created, no avatar, incomplete profiles).
+- **Recent Comparison History**: Quick access to past analyses via persistent local history.
 - **Mutual Follower Identification**: Instantly find users who follow *all* target accounts.
 - **Network Interactions**: Visualize if target accounts follow each other through an interactive graph.
 - **Full Profile Insights**: View avatars, display names, and descriptions of overlapping followers.

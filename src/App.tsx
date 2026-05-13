@@ -12,6 +12,7 @@ import UpSetPlot from './components/visualizations/UpSetPlot';
 import MosaicPlot from './components/visualizations/MosaicPlot';
 import SpecializedDiagrams from './components/visualizations/SpecializedDiagrams';
 import TemporalAnalysis from './components/visualizations/TemporalAnalysis';
+import BioWordCloud from './components/visualizations/BioWordCloud';
 
 const agent = new BskyAgent({ service: 'https://public.api.bsky.app' });
 
@@ -21,6 +22,11 @@ type FollowerData = {
 };
 
 export type VizType = 'venn' | 'euler' | 'edwards' | 'johnston' | 'upset' | 'kv' | 'mosaic' | 'temporal';
+
+export type HistoryItem = {
+  handles: string[];
+  timestamp: number;
+};
 
 type ComparisonResult = {
   accounts: FollowerData[];
@@ -37,7 +43,18 @@ export default function App() {
   const [progress, setProgress] = useState<{ fetchCount: number; totalEstimated: number; handle: string }[]>([]);
   const [result, setResult] = useState<ComparisonResult | null>(null);
   const [activeVizType, setActiveVizType] = useState<VizType>('venn');
-  const [visibleLimit, setVisibleLimit] = useState(50);
+  const [visibleLimit, setVisibleLimit] = useState(20);
+  const [history, setHistory] = useState<HistoryItem[]>(() => {
+    const saved = localStorage.getItem('comparison_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const isSuspicious = (profile: any) => {
+    if (!profile.createdAt) return false;
+    const ageInHours = (new Date().getTime() - new Date(profile.createdAt).getTime()) / (1000 * 60 * 60);
+    // Suspicious if created in last 72h AND no avatar AND no description
+    return ageInHours < 72 && !profile.avatar && (!profile.description || profile.description.length < 5);
+  };
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -219,6 +236,12 @@ export default function App() {
         membershipCounts,
         networkLinks
       });
+
+      // Update History
+      const newHistoryItem: HistoryItem = { handles: handles.filter(h => h.trim() !== ''), timestamp: Date.now() };
+      const updatedHistory = [newHistoryItem, ...history.filter(h => h.handles.join(',') !== newHistoryItem.handles.join(','))].slice(0, 5);
+      setHistory(updatedHistory);
+      localStorage.setItem('comparison_history', JSON.stringify(updatedHistory));
       
     } catch (err: any) {
       if (err.message === "Abgebrochen vom Nutzer") {
@@ -275,6 +298,22 @@ export default function App() {
              Analysiere Überschneidungen und Interaktionen beliebig vieler Accounts.
           </p>
         </div>
+
+        {history.length > 0 && !isComparing && (
+          <div className="bg-slate-50 border-b border-slate-200 p-2 flex gap-2 overflow-x-auto no-scrollbar">
+            <span className="text-[9px] font-black uppercase text-slate-400 self-center px-2">Verlauf:</span>
+            {history.map((item, idx) => (
+              <button 
+                key={idx} 
+                onClick={() => setHandles(item.handles)}
+                className="bg-white border border-slate-200 px-3 py-1 text-[10px] font-bold text-slate-600 hover:border-blue-400 transition whitespace-nowrap"
+              >
+                {item.handles.map(h => h.split('.')[0]).join(' + ')}
+              </button>
+            ))}
+            <button onClick={() => { setHistory([]); localStorage.removeItem('comparison_history'); }} className="text-[9px] font-bold text-red-400 hover:text-red-600 px-2">Löschen</button>
+          </div>
+        )}
 
         {/* Inputs */}
         <div className="bg-slate-200 border-b border-slate-200 p-px">
@@ -492,6 +531,10 @@ export default function App() {
                       </button>
                    )}
                 </div>
+
+                {result.mutual.length > 0 && (
+                  <BioWordCloud mutualFollowers={result.mutual} />
+                )}
                 
                 {result.mutual.length === 0 ? (
                   <div className="p-8 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
@@ -499,21 +542,33 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="flex text-slate-900 flex-col">
-                    {result.mutual.slice(0, visibleLimit).map((profile) => (
-                      <div key={profile.did} className="p-4 md:p-6 border-b border-slate-200 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start gap-4">
-                        {profile.avatar ? (
-                          <img src={profile.avatar} alt={profile.displayName || profile.handle} className="w-12 h-12 md:w-14 md:h-14 bg-slate-200 object-cover flex-shrink-0 grayscale hover:grayscale-0 transition-all duration-300" />
-                        ) : (
-                          <div className="w-12 h-12 md:w-14 md:h-14 bg-slate-200 flex items-center justify-center text-slate-400 flex-shrink-0">
-                             <span className="font-black text-xl">?</span>
-                          </div>
-                        )}
+                    {result.mutual.slice(0, visibleLimit).map((profile) => {
+                      const suspicious = isSuspicious(profile);
+                      return (
+                      <div key={profile.did} className={cn("p-4 md:p-6 border-b border-slate-200 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start gap-4", suspicious && "bg-red-50/30")}>
+                        <div className="relative">
+                          {profile.avatar ? (
+                            <img src={profile.avatar} alt={profile.displayName || profile.handle} className="w-12 h-12 md:w-14 md:h-14 bg-slate-200 object-cover flex-shrink-0 grayscale hover:grayscale-0 transition-all duration-300" />
+                          ) : (
+                            <div className="w-12 h-12 md:w-14 md:h-14 bg-slate-200 flex items-center justify-center text-slate-400 flex-shrink-0">
+                               <span className="font-black text-xl">?</span>
+                            </div>
+                          )}
+                          {suspicious && (
+                            <div className="absolute -top-1 -right-1 bg-red-600 text-white p-1 rounded-full shadow-lg z-10 animate-pulse" title="Verdächtiges Konto (Neu & Unvollständig)">
+                               <AlertCircle size={12} />
+                            </div>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0 w-full">
                           <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                             <div className="overflow-hidden w-full">
-                              <h4 className="font-black text-slate-900 text-base md:text-lg uppercase tracking-tight truncate">
-                                {profile.displayName || profile.handle}
-                              </h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-black text-slate-900 text-base md:text-lg uppercase tracking-tight truncate">
+                                  {profile.displayName || profile.handle}
+                                </h4>
+                                {suspicious && <span className="text-[8px] font-black text-red-600 uppercase tracking-widest bg-red-100 px-1">Risiko</span>}
+                              </div>
                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">@{profile.handle}</p>
                             </div>
                             <a 
@@ -532,7 +587,7 @@ export default function App() {
                           )}
                         </div>
                       </div>
-                    ))}
+                    )})}
                   </div>
                 )}
                 

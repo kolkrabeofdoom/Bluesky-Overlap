@@ -28,12 +28,14 @@ Switch between 7 different diagram types to gain unique insights into your data:
 - **Mosaic Plot**: Area-proportional rectangles showing the relative size of follower segments.
 - **Johnston Diagram**: Logical visualization focused on set-theoretic properties.
 - **Karnaugh-Veitch (KV) Diagram**: Tabular matrix representing every logical combination of followers.
+- **Temporal Analysis**: Visualize account creation trends to identify coordinated bot waves or growth spikes.
 
 ### 🔍 Forensic Capabilities
 - **Mutual Follower Identification**: Instantly find users who follow *all* target accounts.
 - **Network Interactions**: Visualize if target accounts follow each other through an interactive graph.
 - **Full Profile Insights**: View avatars, display names, and descriptions of overlapping followers.
 - **CSV Export**: Export your findings for further analysis in external tools.
+- **Account Creation Tracking**: Forensic detection of account creation dates to spot non-organic patterns.
 
 ## 🛠️ Installation & Setup
 
